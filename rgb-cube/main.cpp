@@ -17,8 +17,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	windowClass.lpszClassName = "WindowClass1";
 	RegisterClassEx(&windowClass);
 
-	int width = 1024;
-	int height = 768;
+	RECT clientRect = { 0, 0, 1024, 768 };
+	AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+	int width = clientRect.right - clientRect.left;
+	int height = clientRect.bottom - clientRect.top;
 	int xPos = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
 	int yPos = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
 
