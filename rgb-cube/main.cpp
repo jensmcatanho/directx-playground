@@ -9,6 +9,9 @@
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
 
+#define SCREEN_WIDTH  1024
+#define SCREEN_HEIGHT 768
+
 IDXGISwapChain *swapchain;
 ID3D11Device *dev;
 ID3D11DeviceContext *devcon;
@@ -30,11 +33,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	windowClass.lpfnWndProc = WindowProc;
 	windowClass.hInstance = hInstance;
 	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	windowClass.hbrBackground = (HBRUSH)COLOR_WINDOW;
+	//windowClass.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	windowClass.lpszClassName = "WindowClass1";
 	RegisterClassEx(&windowClass);
 
-	RECT clientRect = { 0, 0, 1024, 768 };
+	RECT clientRect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 	AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, FALSE);
 
 	int width = clientRect.right - clientRect.left;
@@ -82,10 +85,13 @@ void InitD3D(HWND hWnd) {
 
 	scd.BufferCount = 1;
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	scd.BufferDesc.Width = GetSystemMetrics(SM_CXSCREEN);
+	scd.BufferDesc.Height = GetSystemMetrics(SM_CYSCREEN);
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = hWnd;
 	scd.SampleDesc.Count = 4;
 	scd.Windowed = TRUE;
+	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
 	D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &scd, &swapchain, &dev, NULL, &devcon);
 
@@ -102,19 +108,20 @@ void InitD3D(HWND hWnd) {
 
 	viewport.TopLeftX = 0;
 	viewport.TopLeftY = 0;
-	viewport.Width = 1024;
-	viewport.Height = 768;
+	viewport.Width = GetSystemMetrics(SM_CXSCREEN);
+	viewport.Height = GetSystemMetrics(SM_CYSCREEN);
 
 	devcon->RSSetViewports(1, &viewport);
 }
 
 void RenderFrame() {
-	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.4f, 0.2f, 0.4f, 1.0f));
+	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
 	swapchain->Present(0, 0);
 }
 
 
 void CleanD3D() {
+	swapchain->SetFullscreenState(FALSE, NULL);
 	swapchain->Release();
 	backbuffer->Release();
 	dev->Release();
