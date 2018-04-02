@@ -12,9 +12,11 @@
 IDXGISwapChain *swapchain;
 ID3D11Device *dev;
 ID3D11DeviceContext *devcon;
+ID3D11RenderTargetView *backbuffer;
 
 void InitD3D(HWND hWnd);
-void CleanD3D(void);
+void RenderFrame();
+void CleanD3D();
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -54,7 +56,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 
 		} else {
-
+			RenderFrame();
 		}
 	}
 
@@ -86,10 +88,35 @@ void InitD3D(HWND hWnd) {
 	scd.Windowed = TRUE;
 
 	D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &scd, &swapchain, &dev, NULL, &devcon);
+
+	ID3D11Texture2D *pBackBuffer;
+	swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+
+	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);
+	pBackBuffer->Release();
+
+	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+
+	D3D11_VIEWPORT viewport;
+	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
+
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+	viewport.Width = 1024;
+	viewport.Height = 768;
+
+	devcon->RSSetViewports(1, &viewport);
 }
+
+void RenderFrame() {
+	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.4f, 0.2f, 0.4f, 1.0f));
+	swapchain->Present(0, 0);
+}
+
 
 void CleanD3D() {
 	swapchain->Release();
+	backbuffer->Release();
 	dev->Release();
 	devcon->Release();
 }
