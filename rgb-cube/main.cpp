@@ -16,10 +16,18 @@ IDXGISwapChain *swapchain;
 ID3D11Device *dev;
 ID3D11DeviceContext *devcon;
 ID3D11RenderTargetView *backbuffer;
+ID3D11InputLayout *pLayout;
+ID3D11VertexShader *pVS;
+ID3D11PixelShader *pPS;
+ID3D11Buffer *pVBuffer;
+
+struct VERTEX{ FLOAT X, Y, Z; D3DXCOLOR Color; };
 
 void InitD3D(HWND hWnd);
 void RenderFrame();
 void CleanD3D();
+void InitGraphics();
+void InitPipeline();
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -112,18 +120,89 @@ void InitD3D(HWND hWnd) {
 	viewport.Height = GetSystemMetrics(SM_CYSCREEN);
 
 	devcon->RSSetViewports(1, &viewport);
+
+	InitPipeline();
+	InitGraphics();
 }
 
 void RenderFrame() {
 	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+
+	UINT stride = sizeof(VERTEX);
+	UINT offset = 0;
+	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	devcon->Draw(3, 0);
+
 	swapchain->Present(0, 0);
 }
 
-
 void CleanD3D() {
 	swapchain->SetFullscreenState(FALSE, NULL);
+
+	pLayout->Release();
+	pVS->Release();
+	pPS->Release();
+	pVBuffer->Release();
 	swapchain->Release();
 	backbuffer->Release();
 	dev->Release();
 	devcon->Release();
+}
+
+void InitGraphics()
+{
+	// create a triangle using the VERTEX struct
+	VERTEX OurVertices[] =
+	{
+		{ 0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f) },
+		{ 0.45f, -0.5, 0.0f, D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f) },
+		{ -0.45f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f) }
+	};
+
+
+	// create the vertex buffer
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+
+	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
+	bd.ByteWidth = sizeof(VERTEX)* 3;             // size is the VERTEX struct * 3
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
+	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
+
+	dev->CreateBuffer(&bd, NULL, &pVBuffer);       // create the buffer
+
+
+	// copy the vertices into the buffer
+	D3D11_MAPPED_SUBRESOURCE ms;
+	devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
+	memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
+	devcon->Unmap(pVBuffer, NULL);                                      // unmap the buffer
+}
+
+// this function loads and prepares the shaders
+void InitPipeline()
+{
+	// load and compile the two shaders
+	ID3D10Blob *VS, *PS;
+	D3DX11CompileFromFile("resources/cube_vs.hlsl", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
+	D3DX11CompileFromFile("resources/cube_ps.hlsl", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
+
+	// encapsulate both shaders into shader objects
+	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
+	dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pPS);
+
+	// set the shader objects
+	devcon->VSSetShader(pVS, 0, 0);
+	devcon->PSSetShader(pPS, 0, 0);
+
+	// create the input layout object
+	D3D11_INPUT_ELEMENT_DESC ied[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	dev->CreateInputLayout(ied, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
+	devcon->IASetInputLayout(pLayout);
 }
