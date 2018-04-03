@@ -12,9 +12,9 @@
 #define SCREEN_WIDTH  1024
 #define SCREEN_HEIGHT 768
 
-IDXGISwapChain *swapchain;
-ID3D11Device *dev;
-ID3D11DeviceContext *devcon;
+IDXGISwapChain *swapChain;
+ID3D11Device *device;
+ID3D11DeviceContext *deviceContext;
 ID3D11RenderTargetView *backbuffer;
 ID3D11InputLayout *pLayout;
 ID3D11VertexShader *pVS;
@@ -24,10 +24,9 @@ ID3D11Buffer *pVBuffer;
 struct VERTEX{ FLOAT X, Y, Z; D3DXCOLOR Color; };
 
 void InitD3D(HWND hWnd);
-void RenderFrame();
 void CleanD3D();
-void InitGraphics();
 void InitPipeline();
+void InitGraphics();
 
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -41,7 +40,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	windowClass.lpfnWndProc = WindowProc;
 	windowClass.hInstance = hInstance;
 	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	//windowClass.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	windowClass.lpszClassName = "WindowClass1";
 	RegisterClassEx(&windowClass);
 
@@ -67,7 +65,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 
 		} else {
-			RenderFrame();
+			deviceContext->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
+
+			UINT stride = sizeof(VERTEX);
+			UINT offset = 0;
+			deviceContext->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+			deviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			deviceContext->Draw(3, 0);
+
+			swapChain->Present(0, 0);
 		}
 	}
 
@@ -88,28 +94,28 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 }
 
 void InitD3D(HWND hWnd) {
-	DXGI_SWAP_CHAIN_DESC scd;
-	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
+	DXGI_SWAP_CHAIN_DESC swapChainDesc;
+	ZeroMemory(&swapChainDesc, sizeof(DXGI_SWAP_CHAIN_DESC));
 
-	scd.BufferCount = 1;
-	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	scd.BufferDesc.Width = GetSystemMetrics(SM_CXSCREEN);
-	scd.BufferDesc.Height = GetSystemMetrics(SM_CYSCREEN);
-	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scd.OutputWindow = hWnd;
-	scd.SampleDesc.Count = 4;
-	scd.Windowed = TRUE;
-	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+	swapChainDesc.BufferCount = 1;
+	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	swapChainDesc.BufferDesc.Width = GetSystemMetrics(SM_CXSCREEN);
+	swapChainDesc.BufferDesc.Height = GetSystemMetrics(SM_CYSCREEN);
+	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	swapChainDesc.OutputWindow = hWnd;
+	swapChainDesc.SampleDesc.Count = 4;
+	swapChainDesc.Windowed = TRUE;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
-	D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &scd, &swapchain, &dev, NULL, &devcon);
+	D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, NULL, NULL, NULL, D3D11_SDK_VERSION, &swapChainDesc, &swapChain, &device, NULL, &deviceContext);
 
 	ID3D11Texture2D *pBackBuffer;
-	swapchain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+	swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
 
-	dev->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);
+	device->CreateRenderTargetView(pBackBuffer, NULL, &backbuffer);
 	pBackBuffer->Release();
 
-	devcon->OMSetRenderTargets(1, &backbuffer, NULL);
+	deviceContext->OMSetRenderTargets(1, &backbuffer, NULL);
 
 	D3D11_VIEWPORT viewport;
 	ZeroMemory(&viewport, sizeof(D3D11_VIEWPORT));
@@ -119,40 +125,53 @@ void InitD3D(HWND hWnd) {
 	viewport.Width = GetSystemMetrics(SM_CXSCREEN);
 	viewport.Height = GetSystemMetrics(SM_CYSCREEN);
 
-	devcon->RSSetViewports(1, &viewport);
+	deviceContext->RSSetViewports(1, &viewport);
 
 	InitPipeline();
 	InitGraphics();
 }
 
-void RenderFrame() {
-	devcon->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
-
-	UINT stride = sizeof(VERTEX);
-	UINT offset = 0;
-	devcon->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
-	devcon->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	devcon->Draw(3, 0);
-
-	swapchain->Present(0, 0);
-}
-
 void CleanD3D() {
-	swapchain->SetFullscreenState(FALSE, NULL);
+	swapChain->SetFullscreenState(FALSE, NULL);
 
 	pLayout->Release();
 	pVS->Release();
 	pPS->Release();
 	pVBuffer->Release();
-	swapchain->Release();
+	swapChain->Release();
 	backbuffer->Release();
-	dev->Release();
-	devcon->Release();
+	device->Release();
+	deviceContext->Release();
 }
 
-void InitGraphics()
+// this function loads and prepares the shaders
+void InitPipeline()
 {
-	// create a triangle using the VERTEX struct
+	// load and compile the two shaders
+	ID3D10Blob *vsBlob, *psBlob;
+	D3DX11CompileFromFile("resources/cube_vs.hlsl", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &vsBlob, 0, 0);
+	D3DX11CompileFromFile("resources/cube_ps.hlsl", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &psBlob, 0, 0);
+
+	// encapsulate both shaders into shader objects
+	device->CreateVertexShader(vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), NULL, &pVS);
+	device->CreatePixelShader(psBlob->GetBufferPointer(), psBlob->GetBufferSize(), NULL, &pPS);
+
+	// set the shader objects
+	deviceContext->VSSetShader(pVS, 0, 0);
+	deviceContext->PSSetShader(pPS, 0, 0);
+
+	// create the input layout object
+	D3D11_INPUT_ELEMENT_DESC inElementDesc[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	device->CreateInputLayout(inElementDesc, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &pLayout);
+	deviceContext->IASetInputLayout(pLayout);
+}
+
+void InitGraphics() {
 	VERTEX OurVertices[] =
 	{
 		{ 0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f) },
@@ -160,49 +179,17 @@ void InitGraphics()
 		{ -0.45f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f) }
 	};
 
+	D3D11_BUFFER_DESC bufferDesc;
+	ZeroMemory(&bufferDesc, sizeof(bufferDesc));
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bufferDesc.ByteWidth = sizeof(VERTEX)* 3;
+	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	// create the vertex buffer
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
+	device->CreateBuffer(&bufferDesc, NULL, &pVBuffer);
 
-	bd.Usage = D3D11_USAGE_DYNAMIC;                // write access access by CPU and GPU
-	bd.ByteWidth = sizeof(VERTEX)* 3;             // size is the VERTEX struct * 3
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;       // use as a vertex buffer
-	bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;    // allow CPU to write in buffer
-
-	dev->CreateBuffer(&bd, NULL, &pVBuffer);       // create the buffer
-
-
-	// copy the vertices into the buffer
-	D3D11_MAPPED_SUBRESOURCE ms;
-	devcon->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &ms);    // map the buffer
-	memcpy(ms.pData, OurVertices, sizeof(OurVertices));                 // copy the data
-	devcon->Unmap(pVBuffer, NULL);                                      // unmap the buffer
-}
-
-// this function loads and prepares the shaders
-void InitPipeline()
-{
-	// load and compile the two shaders
-	ID3D10Blob *VS, *PS;
-	D3DX11CompileFromFile("resources/cube_vs.hlsl", 0, 0, "VShader", "vs_4_0", 0, 0, 0, &VS, 0, 0);
-	D3DX11CompileFromFile("resources/cube_ps.hlsl", 0, 0, "PShader", "ps_4_0", 0, 0, 0, &PS, 0, 0);
-
-	// encapsulate both shaders into shader objects
-	dev->CreateVertexShader(VS->GetBufferPointer(), VS->GetBufferSize(), NULL, &pVS);
-	dev->CreatePixelShader(PS->GetBufferPointer(), PS->GetBufferSize(), NULL, &pPS);
-
-	// set the shader objects
-	devcon->VSSetShader(pVS, 0, 0);
-	devcon->PSSetShader(pPS, 0, 0);
-
-	// create the input layout object
-	D3D11_INPUT_ELEMENT_DESC ied[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-	};
-
-	dev->CreateInputLayout(ied, 2, VS->GetBufferPointer(), VS->GetBufferSize(), &pLayout);
-	devcon->IASetInputLayout(pLayout);
+	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
+	deviceContext->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
+	memcpy(mappedSubresource.pData, OurVertices, sizeof(OurVertices));
+	deviceContext->Unmap(pVBuffer, NULL);
 }
