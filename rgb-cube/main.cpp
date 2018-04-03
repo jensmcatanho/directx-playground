@@ -21,7 +21,7 @@ ID3D11VertexShader *pVS;
 ID3D11PixelShader *pPS;
 ID3D11Buffer *pVBuffer;
 
-struct VERTEX{ FLOAT X, Y, Z; D3DXCOLOR Color; };
+struct VERTEX{ FLOAT X, Y, Z; };
 
 void InitD3D(HWND hWnd);
 void CleanD3D();
@@ -164,19 +164,18 @@ void InitPipeline()
 	D3D11_INPUT_ELEMENT_DESC inElementDesc[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
 
-	device->CreateInputLayout(inElementDesc, 2, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &pLayout);
+	device->CreateInputLayout(inElementDesc, 1, vsBlob->GetBufferPointer(), vsBlob->GetBufferSize(), &pLayout);
 	deviceContext->IASetInputLayout(pLayout);
 }
 
 void InitGraphics() {
 	VERTEX OurVertices[] =
 	{
-		{ 0.0f, 0.5f, 0.0f, D3DXCOLOR(1.0f, 0.0f, 0.0f, 1.0f) },
-		{ 0.45f, -0.5, 0.0f, D3DXCOLOR(0.0f, 1.0f, 0.0f, 1.0f) },
-		{ -0.45f, -0.5f, 0.0f, D3DXCOLOR(0.0f, 0.0f, 1.0f, 1.0f) }
+		{ 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 1.0f, 0.0f },
+		{ 1.0f, 0.0f, 0.0f }
 	};
 
 	D3D11_BUFFER_DESC bufferDesc;

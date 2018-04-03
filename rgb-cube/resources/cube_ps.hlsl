@@ -1,3 +1,14 @@
-float4 PShader(float4 position : SV_POSITION, float4 color : COLOR) : SV_TARGET {
-    return color;
+struct PS_INPUT {
+	float4 position : SV_POSITION;
+	float4 color : COLOR;
+};
+
+struct PS_OUTPUT {
+	float4 color : SV_TARGET0;
+};
+
+PS_OUTPUT PShader(PS_INPUT input) {
+	PS_OUTPUT output;
+	output.color = input.color;
+	return output;
 }
