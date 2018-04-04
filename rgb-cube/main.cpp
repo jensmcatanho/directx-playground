@@ -20,6 +20,7 @@ ID3D11InputLayout *pLayout;
 ID3D11VertexShader *pVS;
 ID3D11PixelShader *pPS;
 ID3D11Buffer *pVBuffer;
+ID3D11Buffer *pIBuffer;
 
 struct VERTEX{ FLOAT X, Y, Z; };
 
@@ -70,8 +71,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			UINT stride = sizeof(VERTEX);
 			UINT offset = 0;
 			deviceContext->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
+			deviceContext->IASetIndexBuffer(pIBuffer, DXGI_FORMAT_R32_UINT, offset);
 			deviceContext->IASetPrimitiveTopology(D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			deviceContext->Draw(3, 0);
+			deviceContext->DrawIndexed(6, 0, 0);
 
 			swapChain->Present(0, 0);
 		}
@@ -138,6 +140,7 @@ void CleanD3D() {
 	pVS->Release();
 	pPS->Release();
 	pVBuffer->Release();
+	pIBuffer->Release();
 	swapChain->Release();
 	backbuffer->Release();
 	device->Release();
@@ -171,24 +174,41 @@ void InitPipeline()
 }
 
 void InitGraphics() {
-	VERTEX OurVertices[] =
-	{
+	VERTEX vertices[] = {
 		{ 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 1.0f, 0.0f },
+		{ 1.0f, 1.0f, 0.0f },
 		{ 1.0f, 0.0f, 0.0f }
+	};
+
+	UINT indices[] = {
+		0, 1, 2,
+		0, 2, 3
 	};
 
 	D3D11_BUFFER_DESC bufferDesc;
 	ZeroMemory(&bufferDesc, sizeof(bufferDesc));
 	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDesc.ByteWidth = sizeof(VERTEX)* 3;
+	bufferDesc.ByteWidth = sizeof(VERTEX) * 4;
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
 	device->CreateBuffer(&bufferDesc, NULL, &pVBuffer);
 
 	D3D11_MAPPED_SUBRESOURCE mappedSubresource;
 	deviceContext->Map(pVBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
-	memcpy(mappedSubresource.pData, OurVertices, sizeof(OurVertices));
+	memcpy(mappedSubresource.pData, vertices, sizeof(vertices));
 	deviceContext->Unmap(pVBuffer, NULL);
+
+	ZeroMemory(&bufferDesc, sizeof(bufferDesc));
+	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	bufferDesc.ByteWidth = sizeof(UINT) * 6;
+	bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	device->CreateBuffer(&bufferDesc, NULL, &pIBuffer);
+
+	ZeroMemory(&mappedSubresource, sizeof(mappedSubresource));
+	deviceContext->Map(pIBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
+	memcpy(mappedSubresource.pData, indices, sizeof(indices));
+	deviceContext->Unmap(pIBuffer, NULL);
+
 }
