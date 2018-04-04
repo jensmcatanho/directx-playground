@@ -1,3 +1,5 @@
+#include <memory>
+
 #include <windows.h>
 #include <windowsx.h>
 
@@ -8,6 +10,8 @@
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
 #pragma comment (lib, "d3dx10.lib")
+
+#include "utils/Window.h"
 
 #define SCREEN_WIDTH  1024
 #define SCREEN_HEIGHT 768
@@ -29,32 +33,10 @@ void CleanD3D();
 void InitPipeline();
 void InitGraphics();
 
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-	HWND windowHandler;
-	WNDCLASSEX windowClass;
-	ZeroMemory(&windowClass, sizeof(WNDCLASSEX));
-
-	windowClass.cbSize = sizeof(WNDCLASSEX);
-	windowClass.style = CS_HREDRAW | CS_VREDRAW;
-	windowClass.lpfnWndProc = WindowProc;
-	windowClass.hInstance = hInstance;
-	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
-	windowClass.lpszClassName = "WindowClass1";
-	RegisterClassEx(&windowClass);
-
-	RECT clientRect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-	AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, FALSE);
-
-	int width = clientRect.right - clientRect.left;
-	int height = clientRect.bottom - clientRect.top;
-	int xPos = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
-	int yPos = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
-
-	windowHandler = CreateWindowEx(NULL, "WindowClass1", "RGB Cube", WS_OVERLAPPEDWINDOW, xPos, yPos, width, height, NULL, NULL, hInstance, NULL);
-	ShowWindow(windowHandler, nShowCmd);
-	InitD3D(windowHandler);
+	std::shared_ptr<utils::Window> window(new utils::Window());
+	window->Create(hInstance, "RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT, nShowCmd);
+	InitD3D(window->GetHandler());
 
 	MSG msg;
 	while (true) {
@@ -81,18 +63,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	CleanD3D();
 	return msg.wParam;
-}
-
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
-	switch (message) {
-		case WM_DESTROY:
-			{
-				PostQuitMessage(0);
-				return 0;
-			} break;
-	}
-
-	return DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 void InitD3D(HWND hWnd) {
