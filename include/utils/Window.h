@@ -36,13 +36,15 @@ class Window {
 	public:
 		Window();
 
-		bool Create(HINSTANCE hInstance, std::string title, int screenWidth, int screenHeight, int nShowCmd);
+		~Window();
+
+		bool Create(std::string title, int screenWidth, int screenHeight);
+
+		void Release();
 
 		HWND GetHandler() const;
 
 	private:
-		void InitD3D();
-
 		std::string m_Title;
 
 		int m_Width;

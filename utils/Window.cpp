@@ -31,21 +31,23 @@ namespace utils {
 
 
 Window::Window() {
-
-}
-
-bool Window::Create(HINSTANCE hInstance, std::string title, int screenWidth, int screenHeight, int nShowCmd) {
 	WNDCLASSEX windowClass;
 	ZeroMemory(&windowClass, sizeof(WNDCLASSEX));
 
 	windowClass.cbSize = sizeof(WNDCLASSEX);
 	windowClass.style = CS_HREDRAW | CS_VREDRAW;
 	windowClass.lpfnWndProc = WindowProc;
-	windowClass.hInstance = hInstance;
+	windowClass.hInstance = GetModuleHandle(NULL);
 	windowClass.hCursor = LoadCursor(NULL, IDC_ARROW);
 	windowClass.lpszClassName = "WindowClass1";
 	RegisterClassEx(&windowClass);
+}
 
+Window::~Window() {
+	Release();
+}
+
+bool Window::Create(std::string title, int screenWidth, int screenHeight) {
 	RECT clientRect = { 0, 0, screenWidth, screenHeight };
 	AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, FALSE);
 
@@ -54,14 +56,22 @@ bool Window::Create(HINSTANCE hInstance, std::string title, int screenWidth, int
 	int xPos = (GetSystemMetrics(SM_CXSCREEN) - width) / 2;
 	int yPos = (GetSystemMetrics(SM_CYSCREEN) - height) / 2;
 
-	m_WindowHandler = CreateWindowEx(NULL, "WindowClass1", "RGB Cube", WS_OVERLAPPEDWINDOW, xPos, yPos, width, height, NULL, NULL, hInstance, NULL);
+	m_WindowHandler = CreateWindowEx(NULL, "WindowClass1", title.c_str(), WS_OVERLAPPEDWINDOW, xPos, yPos, width, height, NULL, NULL, GetModuleHandle(NULL), NULL);
 	if (m_WindowHandler == NULL) {
 		// DWORD errCode = GetLastError();
 		return false;
 	}
 	
-	ShowWindow(m_WindowHandler, nShowCmd);
+	ShowWindow(m_WindowHandler, SW_SHOW);
 	return true;
+}
+
+void Window::Release() {
+	if (IsWindow(m_WindowHandler)) {
+		if (!DestroyWindow(m_WindowHandler)) {
+			m_WindowHandler = NULL;
+		}
+	}
 }
 
 }

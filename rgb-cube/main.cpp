@@ -24,6 +24,7 @@ SOFTWARE.
 -----------------------------------------------------------------------------
 */
 #include <memory>
+#include <iostream>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -41,7 +42,7 @@ SOFTWARE.
 #define SCREEN_WIDTH  1024
 #define SCREEN_HEIGHT 768
 
-IDXGISwapChain *swapChain;
+IDXGISwapChain *swapChain = nullptr;
 ID3D11Device *device;
 ID3D11DeviceContext *deviceContext;
 ID3D11RenderTargetView *backbuffer;
@@ -60,7 +61,12 @@ void InitGraphics();
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	std::shared_ptr<utils::Window> window(new utils::Window());
-	window->Create(hInstance, "RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT, nShowCmd);
+	window->Create("RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT);
+	if (!window) {
+		std::cout << "Error creating window!" << std::endl;
+		return -1;
+	}
+
 	InitD3D(window->GetHandler());
 
 	MSG msg;
