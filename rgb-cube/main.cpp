@@ -25,6 +25,7 @@ SOFTWARE.
 */
 #include <memory>
 #include <iostream>
+#include <sstream>
 
 #include <windows.h>
 #include <windowsx.h>
@@ -58,12 +59,16 @@ void InitD3D(HWND hWnd);
 void CleanD3D();
 void InitPipeline();
 void InitGraphics();
+std::stringstream ErrorMessage(DWORD errorCode);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	std::shared_ptr<utils::Window> window(new utils::Window());
-	window->Create("RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT);
-	if (!window) {
-		std::cout << "Error creating window!" << std::endl;
+	while (!window->Create("RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT)) {
+		std::string message = ErrorMessage(GetLastError()).str();
+		if (MessageBox(NULL, message.c_str(), "Error", MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY) {
+			continue;
+		}
+
 		return -1;
 	}
 
@@ -211,5 +216,22 @@ void InitGraphics() {
 	deviceContext->Map(pIBuffer, NULL, D3D11_MAP_WRITE_DISCARD, NULL, &mappedSubresource);
 	memcpy(mappedSubresource.pData, indices, sizeof(indices));
 	deviceContext->Unmap(pIBuffer, NULL);
+}
 
+std::stringstream ErrorMessage(DWORD errorCode) {
+	DWORD errCode = GetLastError();
+	LPSTR messageBuffer = nullptr;
+	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, 
+		NULL, 
+		errCode, 
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), 
+		(LPSTR)&messageBuffer, 
+		0, 
+		NULL);
+
+	std::stringstream string_stream;
+	string_stream << messageBuffer;
+	LocalFree(messageBuffer);
+
+	return string_stream;
 }
