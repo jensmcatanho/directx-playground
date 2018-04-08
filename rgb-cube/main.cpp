@@ -63,8 +63,10 @@ std::stringstream ErrorMessage(DWORD errorCode);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	std::shared_ptr<utils::Window> window(new utils::Window());
-	while (!window->Create("RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT)) {
-		std::string message = ErrorMessage(GetLastError()).str();
+	
+	DWORD err;
+	while ((err = window->Create("RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT))) {
+		std::string message = ErrorMessage(err).str();
 		if (MessageBox(NULL, message.c_str(), "Error", MB_ICONERROR | MB_RETRYCANCEL) == IDRETRY) {
 			continue;
 		}

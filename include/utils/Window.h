@@ -38,7 +38,7 @@ class Window {
 
 		~Window();
 
-		bool Create(std::string title, int screenWidth, int screenHeight);
+		DWORD Create(std::string title, int screenWidth, int screenHeight);
 
 		void Release();
 

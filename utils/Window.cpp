@@ -47,7 +47,7 @@ Window::~Window() {
 	Release();
 }
 
-bool Window::Create(std::string title, int screenWidth, int screenHeight) {
+DWORD Window::Create(std::string title, int screenWidth, int screenHeight) {
 	RECT clientRect = { 0, 0, screenWidth, screenHeight };
 	AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, FALSE);
 
@@ -58,12 +58,11 @@ bool Window::Create(std::string title, int screenWidth, int screenHeight) {
 
 	m_WindowHandler = CreateWindowEx(NULL, "WindowClass1", title.c_str(), WS_OVERLAPPEDWINDOW, xPos, yPos, width, height, NULL, NULL, GetModuleHandle(NULL), NULL);
 	if (m_WindowHandler == NULL) {
-		// DWORD errCode = GetLastError();
-		return false;
+		return GetLastError();
 	}
 	
 	ShowWindow(m_WindowHandler, SW_SHOW);
-	return true;
+	return 0;
 }
 
 void Window::Release() {
