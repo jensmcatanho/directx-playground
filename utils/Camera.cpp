@@ -70,19 +70,19 @@ void Camera::ProcessMovement(Movement direction, float delta_time) {
 
 	if (direction == FORWARD) {
 		XMVECTOR w = XMLoadFloat3(&m_W);
-		position = XMVectorSubtract(position, XMVectorScale(w, velocity));
+		position -= w * velocity;
 
 	} else if (direction == BACKWARD) {
 		XMVECTOR w = XMLoadFloat3(&m_W);
-		position = XMVectorAdd(position, XMVectorScale(w, velocity));
+		position += w * velocity;
 
 	} else if (direction == LEFT) {
 		XMVECTOR u = XMLoadFloat3(&m_U);
-		position = XMVectorSubtract(position, XMVectorScale(u, velocity));
+		position -= u * velocity;
 
 	} else {
 		XMVECTOR u = XMLoadFloat3(&m_U);
-		position = XMVectorAdd(position, XMVectorScale(u, velocity));
+		position += u * velocity;
 	}
 }
 
@@ -110,12 +110,14 @@ void Camera::ProcessZoom(float y_offset) {
 
 void Camera::UpdateVectors() {
 	using namespace DirectX;
-	XMFLOAT3 lookAt;
-	lookAt.x = cos(XMConvertToRadians(m_Yaw)) * cos(XMConvertToRadians(m_Pitch));
-	lookAt.y = sin(XMConvertToRadians(m_Pitch));
-	lookAt.z = sin(XMConvertToRadians(m_Yaw)) * cos(XMConvertToRadians(m_Pitch));
+	XMVECTOR lookAt = XMVectorSet(
+		cos(XMConvertToRadians(m_Yaw)) * cos(XMConvertToRadians(m_Pitch)),
+		sin(XMConvertToRadians(m_Pitch)),
+		sin(XMConvertToRadians(m_Yaw)) * cos(XMConvertToRadians(m_Pitch)),
+		0.0f
+	);
 	
-	XMVECTOR W = -XMVector3Normalize(XMLoadFloat3(&lookAt));
+	XMVECTOR W = -XMVector3Normalize(lookAt);
 	XMStoreFloat3(&m_W, W);
 
 	XMVECTOR U = XMVector3Normalize(XMVector3Cross(XMLoadFloat3(&m_WorldUp), W));

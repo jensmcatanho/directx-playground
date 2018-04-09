@@ -91,11 +91,12 @@ class Camera {
 };
 
 inline DirectX::XMMATRIX Camera::ViewMatrix() const {
-	DirectX::XMVECTOR eye = DirectX::XMLoadFloat3(&m_Position);
-	DirectX::XMVECTOR focus = DirectX::XMLoadFloat3(&m_W);
-	DirectX::XMVECTOR up = DirectX::XMLoadFloat3(&m_V);
+	using namespace DirectX;
+	XMVECTOR eye = XMLoadFloat3(&m_Position);
+	XMVECTOR focus = XMLoadFloat3(&m_W);
+	XMVECTOR up = XMLoadFloat3(&m_V);
 
-	return DirectX::XMMatrixLookAtRH(eye, DirectX::XMVectorSubtract(eye, focus), up);
+	return XMMatrixLookAtRH(eye, eye - focus, up);
 }
 
 inline DirectX::XMMATRIX Camera::ProjectionMatrix(float width, float height) const {
