@@ -33,6 +33,7 @@ SOFTWARE.
 #include <d3d11.h>
 #include <d3dx11.h>
 #include <d3dx10.h>
+#include <DirectXMath.h>
 
 #pragma comment (lib, "d3d11.lib")
 #pragma comment (lib, "d3dx11.lib")
@@ -52,8 +53,6 @@ ID3D11VertexShader *pVS;
 ID3D11PixelShader *pPS;
 ID3D11Buffer *pVBuffer;
 ID3D11Buffer *pIBuffer;
-
-struct VERTEX{ FLOAT X, Y, Z; };
 
 void InitD3D(HWND hWnd);
 void CleanD3D();
@@ -88,7 +87,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		} else {
 			deviceContext->ClearRenderTargetView(backbuffer, D3DXCOLOR(0.0f, 0.2f, 0.4f, 1.0f));
 
-			UINT stride = sizeof(VERTEX);
+			UINT stride = sizeof(DirectX::XMFLOAT3);
 			UINT offset = 0;
 			deviceContext->IASetVertexBuffers(0, 1, &pVBuffer, &stride, &offset);
 			deviceContext->IASetIndexBuffer(pIBuffer, DXGI_FORMAT_R32_UINT, offset);
@@ -182,7 +181,7 @@ void InitPipeline()
 }
 
 void InitGraphics() {
-	VERTEX vertices[] = {
+	DirectX::XMFLOAT3 vertices[] = {
 		{ 0.0f, 0.0f, 0.0f },
 		{ 0.0f, 1.0f, 0.0f },
 		{ 1.0f, 1.0f, 0.0f },
@@ -197,7 +196,7 @@ void InitGraphics() {
 	D3D11_BUFFER_DESC bufferDesc;
 	ZeroMemory(&bufferDesc, sizeof(bufferDesc));
 	bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-	bufferDesc.ByteWidth = sizeof(VERTEX) * 4;
+	bufferDesc.ByteWidth = sizeof(DirectX::XMFLOAT3) * 4;
 	bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	device->CreateBuffer(&bufferDesc, NULL, &pVBuffer);
