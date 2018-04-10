@@ -62,7 +62,7 @@ void InitGraphics();
 std::stringstream ErrorMessage(DWORD errorCode);
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
-	std::shared_ptr<utils::Window> window(new utils::Window());
+	auto window = std::make_shared<utils::Window>();
 	
 	DWORD err;
 	while ((err = window->Create("RGB Cube", SCREEN_WIDTH, SCREEN_HEIGHT))) {
